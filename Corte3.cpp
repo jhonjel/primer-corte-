@@ -1,234 +1,442 @@
 #include <iostream>
-#include <string.h>
-#include <algorithm>
 #include <malloc.h>
+#include <cstring>
+#include <algorithm>
 
 using namespace std;
 
-struct Atleta {
-    int valor;
-    char nom[20];
-    int tiempo;
-    Atleta* derecha;
-    Atleta* izquierda;
-    int vueltaAtleta;
-    int altura;
-    int promedio;
-    int promedioTotal;
-
+struct corredor
+{
+    int contador = 0;
+    int time;
+    int promedio = 0;
+    int sematemp = 0;
+//datos 
+    char nombre[20];
+    int asignado;
+    corredor *sig;
+    corredor *izquierdo;
+    corredor *derecho;
 };
-int calcularPromedio();
-Atleta* raiz_arbol = NULL;
-Atleta* aux;
-Atleta* aux_posicion;
 
-int altura(Atleta* nodo) {
-    if (nodo == NULL) {
+corredor *cab, *aux, *aux2, *raiz, *auxA, *auxA2;
+
+int numero;
+int i = 0;
+int arbol = 0;
+
+
+int calcularAltura(corredor *nodo)
+{
+    if (nodo == NULL)
         return 0;
-    }
-    return nodo->altura;
+    return 1 + max(calcularAltura(nodo->izquierdo), calcularAltura(nodo->derecho));
 }
 
-int factorEquilibrio(Atleta* nodo) {
-    if (nodo == NULL) {
-        return 0;
-    }
-    return altura(nodo->izquierda) - altura(nodo->derecha);
+// Realiza una rotación simple a la derecha
+void rotacionSimpleDerecha(corredor *&nodo)
+{
+    corredor *aux = nodo->izquierdo;
+    nodo->izquierdo = aux->derecho;
+    aux->derecho = nodo;
+    nodo = aux;
 }
 
-Atleta* rotarIzquierda(Atleta* nodo) {
-    Atleta* nodoDerecha = nodo->derecha;
-    Atleta* nodoIzquierdaSubArbolDerecho = nodoDerecha->izquierda;
-
-    nodoDerecha->izquierda = nodo;
-    nodo->derecha = nodoIzquierdaSubArbolDerecho;
-
-    nodo->altura = max(altura(nodo->izquierda), altura(nodo->derecha)) + 1;
-    nodoDerecha->altura = max(altura(nodoDerecha->izquierda), altura(nodoDerecha->derecha)) + 1;
-
-    return nodoDerecha;
+// Realiza una rotación simple a la izquierda
+void rotacionSimpleIzquierda(corredor *&nodo)
+{
+    corredor *aux = nodo->derecho;
+    nodo->derecho = aux->izquierdo;
+    aux->izquierdo = nodo;
+    nodo = aux;
 }
 
-Atleta* rotarDerecha(Atleta* nodo) {
-    Atleta* nodoIzquierda = nodo->izquierda;
-    Atleta* nodoDerechaSubArbolIzquierdo = nodoIzquierda->derecha;
-
-    nodoIzquierda->derecha = nodo;
-    nodo->izquierda = nodoDerechaSubArbolIzquierdo;
-
-    nodo->altura = max(altura(nodo->izquierda), altura(nodo->derecha)) + 1;
-    nodoIzquierda->altura = max(altura(nodoIzquierda->izquierda), altura(nodoIzquierda->derecha)) + 1;
-
-    return nodoIzquierda;
+// Realiza una rotación doble a la derecha
+void rotacionDobleDerecha(corredor *&nodo)
+{
+    rotacionSimpleIzquierda(nodo->izquierdo);
+    rotacionSimpleDerecha(nodo);
 }
 
-Atleta* balancearArbol(Atleta* nodo) {
-    if (nodo == NULL) {
-        return nodo;
+// Realiza una rotación doble a la izquierda
+void rotacionDobleIzquierda(corredor *&nodo)
+{
+    rotacionSimpleDerecha(nodo->derecho);
+    rotacionSimpleIzquierda(nodo);
+}    
+
+// Realiza el balanceo del árbol AVL
+void balancearArbol(corredor *&nodo)
+{
+    if (nodo == NULL)
+        return;
+
+    int alturaIzq = calcularAltura(nodo->izquierdo);
+    int alturaDer = calcularAltura(nodo->derecho);
+    int diferenciaAltura = alturaDer - alturaIzq;
+
+    if (diferenciaAltura > 1)
+    {
+        // Desbalance hacia la derecha
+        int alturaDerDer = calcularAltura(nodo->derecho->derecho);
+        int alturaDerIzq = calcularAltura(nodo->derecho->izquierdo);
+        if (alturaDerDer >= alturaDerIzq)
+            rotacionSimpleIzquierda(nodo);
+        else
+            rotacionDobleIzquierda(nodo);
+    }
+    else if (diferenciaAltura < -1)
+    {
+        // Desbalance hacia la izquierda
+        int alturaIzqIzq = calcularAltura(nodo->izquierdo->izquierdo);
+        int alturaIzqDer = calcularAltura(nodo->izquierdo->derecho);
+        if (alturaIzqIzq >= alturaIzqDer)
+            rotacionSimpleDerecha(nodo);
+        else
+            rotacionDobleDerecha(nodo);
     }
 
-    nodo->altura = max(altura(nodo->izquierda), altura(nodo->derecha)) + 1;
-
-    int factor = factorEquilibrio(nodo);
-
-    if (factor > 1) {
-        if (factorEquilibrio(nodo->izquierda) < 0) {
-            nodo->izquierda = rotarIzquierda(nodo->izquierda);
-        }
-        return rotarDerecha(nodo);
-    }
-    if (factor < -1) {
-        if (factorEquilibrio(nodo->derecha) > 0) {
-            nodo->derecha = rotarDerecha(nodo->derecha);
-        }
-        return rotarIzquierda(nodo);
-    }
-
-    return nodo;
+    // Recursivamente balancear los hijos
+    balancearArbol(nodo->izquierdo);
+    balancearArbol(nodo->derecho);
 }
 
-void promedio(Atleta* raiz_arbol) {
-    
-    promedio(raiz_arbol->izquierda);  
-    
-    cout << "Camisa del atleta: " << raiz_arbol->valor << endl;
-    cout << "Promedio de tiempos: " << raiz_arbol->promedioTotal << endl << endl;
-     promedio(raiz_arbol->derecha);  
-	 
-}
-
-
-
-void registraTiempo() {
-    aux = raiz_arbol;
-
-    int valor2;
-    cout << "Ingrese el número de la camiseta del atleta: ";
-    cin >> valor2;
-
-    aux = raiz_arbol; // Restablecer aux a raiz_arbol
-
-    while (aux != NULL && aux->valor != valor2) {
-        if (aux->valor < valor2) {
-            aux = aux->derecha;
-        } else {
-            aux = aux->izquierda;
-        }
-    }
-    if (aux != NULL) {
-        aux->vueltaAtleta++;
-
-        cout << "Nombre: " << aux->nom << " - "
-             << "Vuelta del atleta: " << aux->vueltaAtleta << " - "
-             << "Tiempo del Atleta: " << aux->tiempo << endl;
-
-        cout << "\n";
-
-        cout << "Ingrese el tiempo del atleta: ";
-        cin >> aux->tiempo;
-        calcularPromedio();
-        
-    } else {
-        cout << "El atleta no se pudo encontrar." << endl;
-    }
-}
-
-void mostra_arbol(Atleta* auxb) {
-    if (auxb->izquierda != NULL) {
-        mostra_arbol(auxb->izquierda);
-    }
-
-    cout << "\t Nombre del Atleta: " << auxb->nom
-         << " Numero de camisa del Atleta: " << auxb->valor
-         << " Tiempo del Atleta: " << auxb->tiempo << endl;
-
-    if (auxb->derecha != NULL) {
-        mostra_arbol(auxb->derecha);
-    }
-}
-
-void posicionar() {
-    if (aux->valor < aux_posicion->valor) {
-        if (aux_posicion->izquierda != NULL) {
-            aux_posicion = aux_posicion->izquierda;
+// FUNCION PARTE DEL REGISTRO EN EL ARBOL
+int posicionar()
+{
+    if (auxA->promedio < auxA2->promedio)
+    {
+        if (auxA2->izquierdo != NULL)
+        {
+            auxA2 = auxA2->izquierdo;
             posicionar();
-        } else {
-            aux_posicion->izquierda = aux;
         }
-    } else if (aux->valor > aux_posicion->valor) {
-        if (aux_posicion->derecha != NULL) {
-            aux_posicion = aux_posicion->derecha;
-            posicionar();
-        } else {
-            aux_posicion->derecha = aux;
-        }
-    } else {
-        cout << "El número de camiseta ya está en uso." << endl;
-       
+        else
+            auxA2->izquierdo = auxA;
     }
-    raiz_arbol = balancearArbol(raiz_arbol); // Equilibrar el árbol después de la inserción
+    else if (auxA->promedio > auxA2->promedio)
+    {
+        if (auxA2->derecho != NULL)
+        {
+            auxA2 = auxA2->derecho;
+            posicionar();
+        }
+        else
+            auxA2->derecho = auxA;
+    }
+    return 0;
 }
 
-void registrarAtleta() {
-   aux  = (struct Atleta *) malloc (sizeof(struct Atleta));
-    aux->vueltaAtleta = 0;
-    aux->tiempo=0;
-    
+// REGISTRA EL CALCULO DEL PROMEDIO EN EL ARBOL
+int registrarArbol(corredor *fifo)
+{
 
-    cout << "Ingresar numero de la camiseta: ";
-    cin >> aux->valor;
-    cout << "Ingresar nombre del Atleta: ";
-    cin >> aux->nom;
-    
-    aux->derecha = NULL;
-    aux->izquierda = NULL;
-    aux->altura = 1;
+    auxA = fifo;
 
-    if (raiz_arbol == NULL) {
-        raiz_arbol = aux;
-    } else {
-        aux_posicion = raiz_arbol;
+    auxA->izquierdo = auxA->derecho = NULL;
+    if (raiz == NULL)
+    {
+        raiz = auxA;
+        auxA = NULL;
+        free(auxA);
+    }
+    else
+    {
+        auxA2 = raiz;
         posicionar();
     }
+    return 0;
 }
 
-int calcularPromedio() {
-    aux = raiz_arbol;
-    aux->promedio +=aux->tiempo;
-    aux->promedioTotal=aux->promedio/aux->vueltaAtleta;
-    
-    
-}
+// REGISTRAR ATLETA
 
-int main() {
-    int menu;
-    do {
-    	cout<<"\n";
-        cout<<"\n";
+int registrar()
+{
 
-        cout << "\t *** Atleta ***" << endl;
-        cout << "1: Registrar atleta" << endl;
-        cout << "2: Mostrar atletas" << endl;
-        cout << "3: Ingresar tiempo" << endl;
-        cout << "4: Promedio de tiempos" << endl;
-        cout << "5: Salir" << endl;
-        cin >> menu;
-        system("cls");
-        switch (menu) {
-            case 1:
-                registrarAtleta();
-                break;
-            case 2:
-                mostra_arbol(raiz_arbol);
-                break;
-            case 3:
-                registraTiempo();
-                break;
-            case 4:
-                promedio(raiz_arbol);
-                break;
+    if (cab == NULL)
+    {
+
+        cab = (struct corredor *)malloc(sizeof(struct corredor));
+
+        cout << "Ingrase nombre del atleta: ";
+        cin >> cab->nombre;
+
+        cout << "Ingrese numero de camisa: ";
+        cin >> cab->asignado;
+
+        cab->contador = 0;
+        cab->promedio = 0;
+        cab->sematemp = 0;
+        cab->time = 0;
+
+
+        cab->sig = NULL;
+    }
+    else
+    {
+        aux = (struct corredor *)malloc(sizeof(struct corredor));
+
+        cout << "Ingrase nombre del atleta:  ";
+        cin >> aux->nombre;
+
+        cout << "Ingrese numero de camiseta: ";
+        cin >> aux->asignado;
+
+        for (corredor *temp = cab; temp != NULL; temp = temp->sig)
+        {
+            if (aux->asignado == temp->asignado)
+            {
+                cout << "El numero de camiseta ya existe. intente otra vez.." << endl;
+                free(aux);
+
+                return 0;
+            }
         }
-    } while (menu != 5);
+        aux->contador = 0;
+        aux->promedio = 0;
+        aux->sematemp = 0;
+        aux->time = 0;
+
+        cout << "guardado" << endl;
+
+        aux->sig = NULL;
+        aux2 = cab;
+
+        while (aux2->sig != NULL)
+
+            aux2 = aux2->sig;
+        aux2->sig = aux;
+
+        aux2 = aux = NULL;
+        free(aux);
+        free(aux2);
+    }
+    return 0;
+}
+
+int correr()
+{
+
+    aux = cab;
+    int camisa;
+    bool encontrado = false;
+    cout << "Ingrese numero de camiseta: ";
+    cin >> camisa;
+
+    for (aux = cab; aux != NULL; aux = aux->sig)
+    {
+        if (camisa == aux->asignado)
+        {
+            if (aux->contador == 1)
+            {
+                int multime;
+                aux->contador++;
+                cout << "Ingrse tiempo de vuelta "<< "  " << aux->contador << ":";
+                cin >> multime;
+                
+                if (multime < 0)
+                {
+                    cout << "El tiempo ingresado no puede ser negativo. Ingrese un tiempo valido." << endl;
+                    aux->contador--;
+                    aux = aux2 = NULL;
+                    return 0;
+                }
+
+                aux->sematemp = (aux->sematemp + multime);
+                int resultado = (aux->sematemp) / 2;
+                aux->promedio = resultado;
+                aux->time = (multime);
+                registrarArbol(aux);
+                encontrado = true;
+                aux = aux2 = NULL;
+                cout << "Guardado ";
+                arbol++;
+                i++;
+                break;
+            }
+            if (aux->contador > 1)
+            {
+                int multime;
+                aux->contador++;
+
+                cout << "Ingrese tiempo de vuelta" << "  " << aux->contador << ":";
+                cin >> multime;
+                if (multime < 0)
+                {
+                    cout << "El tiempo ingresado no puede ser negativo. Ingrese un tiempo valido." << endl;
+                    aux->contador--;
+                    aux = aux2 = NULL;
+                    return 0;
+                }
+
+                aux->sematemp = (aux->sematemp + multime);
+                int resultado = (aux->sematemp) / 2;
+                aux->promedio = resultado;
+                aux->time = (multime);
+                registrarArbol(aux);
+                balancearArbol(raiz);
+                encontrado = true;
+                aux = aux2 = NULL;
+                cout << "Registro Exitoso";
+                arbol++;
+                i++;
+                break;
+            }
+
+            else
+            {
+                int x = 1;
+                int y = aux->contador;
+
+                aux->contador = x + y;
+
+                cout << "Ingrese tiempo de  vielta"<< "  " << aux->contador << ":";
+                cin >> aux->time;
+                int multime = aux->time;
+                // Validar tiempo positivo
+                if (multime < 0)
+                {
+                    cout << "El tiempo ingresado no puede ser negativo. Ingrese un tiempo valido." << endl;
+                    aux->contador--;
+                    aux = aux2 = NULL;
+                    return 0;
+                }
+
+                encontrado = true;
+                aux = NULL;
+                cout << "Guardado ";
+                arbol++;
+                break;
+            }
+        }
+    }
+
+    if (encontrado == false)
+    {
+        printf("No se encontro el atleta");
+    }
+    return 0;
+}
+
+// MUESTRA DE MENOR A MAYOR
+int inorden(corredor *recursive)
+{
+
+    if (arbol == 0)
+    {
+        cout << "~~vacio~~" << endl;
+        return 0;
+    }
+
+    if (recursive->izquierdo != NULL)
+    {
+        inorden(recursive->izquierdo);
+    }
+    cout << "corredor  camisa N." << recursive->asignado << " Nombre: " << recursive->nombre << " Ultimo Tiempo: " << recursive->time << " Numero de vueltas: " << recursive->contador << "  Promedio: " << recursive->promedio << endl;
+
+    if (recursive->derecho != NULL)
+    {
+        inorden(recursive->derecho);
+    }
+    return 0;
+}
+
+
+
+void ordenar_FIFO_desc(struct corredor *inicio)
+{
+    struct corredor *actual = inicio;
+    while (actual != NULL)
+    {
+        struct corredor *mayor = actual;
+        struct corredor *sig = actual->sig;
+        while (sig != NULL)
+        {
+            if (sig->promedio > mayor->promedio)
+            {
+                mayor = sig;
+            }
+            sig = sig->sig;
+        }
+        int temp = actual->promedio;
+        int tamp = actual->asignado;
+        int tomp = actual->time;
+        int timp = actual->contador;
+        int tump = actual->sematemp;
+
+        char nom[20];
+        memcpy(nom, actual->nombre, 20);
+
+        actual->promedio = mayor->promedio;
+        mayor->promedio = temp;
+
+        actual->asignado = mayor->asignado;
+        mayor->asignado = tamp;
+
+        actual->time = mayor->time;
+        mayor->time = tomp;
+
+        actual->contador = mayor->contador;
+        mayor->contador = timp;
+
+        actual->sematemp = mayor->sematemp;
+        mayor->sematemp = tump;
+
+        memcpy(actual->nombre, mayor->nombre, 20);
+        memcpy(mayor->nombre, nom, 20);
+        actual = actual->sig;
+    }
+}
+
+void uso(){
+     cab = NULL;
+    aux = NULL;
+    aux2 = NULL;
+    raiz = NULL;
+    auxA = NULL;
+    auxA2 = NULL;
+
+}
+
+int main()
+{
+  uso(); 
+    int opc = 0;
+    do
+    {
+        cout << endl;
+        cout << endl;
+        cout << "*PLANILLA DE ATLETAS ***" << endl;
+        cout << endl;
+        cout << "1-REGISTRAR CORREDOR" << endl;
+        cout << "2-REGUISTRO DE CARRERAS " << endl;
+        cout << "3-VER DATOS EN EL ARBOL" << endl;
+        cout << "4-SALIR" << endl;
+        cin >> opc;
+
+        switch (opc)
+        {
+        case 1:
+        system("cls");
+            registrar(); break;
+
+        case 2:
+        system("cls");
+          correr();  break;
+    
+
+        case 3:
+        system("cls");
+            inorden(raiz);  break;
+
+        case 4:
+            cout << "....Fin..." << endl; break;
+
+        default:
+            break;
+        }
+
+    } while (opc != 4);
 
     return 0;
 }
