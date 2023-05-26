@@ -8,7 +8,7 @@ using namespace std;
 struct corredor
 {
     int contador = 0;
-    int time;
+    int temp;
     int promedio = 0;
     int sematemp = 0;
 //datos 
@@ -19,7 +19,7 @@ struct corredor
     corredor *derecho;
 };
 
-corredor *cab, *aux, *aux2, *raiz, *auxA, *auxA2;
+corredor *cab, *aux, *aux2, *raiz, *aux3, *aux32;
 
 int numero;
 int i = 0;
@@ -104,25 +104,25 @@ void balancearArbol(corredor *&nodo)
 // FUNCION PARTE DEL REGISTRO EN EL ARBOL
 int posicionar()
 {
-    if (auxA->promedio < auxA2->promedio)
+    if (aux3->promedio < aux32->promedio)
     {
-        if (auxA2->izquierdo != NULL)
+        if (aux32->izquierdo != NULL)
         {
-            auxA2 = auxA2->izquierdo;
+            aux32 = aux32->izquierdo;
             posicionar();
         }
         else
-            auxA2->izquierdo = auxA;
+            aux32->izquierdo = aux3;
     }
-    else if (auxA->promedio > auxA2->promedio)
+    else if (aux3->promedio > aux32->promedio)
     {
-        if (auxA2->derecho != NULL)
+        if (aux32->derecho != NULL)
         {
-            auxA2 = auxA2->derecho;
+            aux32 = aux32->derecho;
             posicionar();
         }
         else
-            auxA2->derecho = auxA;
+            aux32->derecho = aux3;
     }
     return 0;
 }
@@ -131,18 +131,18 @@ int posicionar()
 int registrarArbol(corredor *fifo)
 {
 
-    auxA = fifo;
+    aux3 = fifo;
 
-    auxA->izquierdo = auxA->derecho = NULL;
+    aux3->izquierdo = aux3->derecho = NULL;
     if (raiz == NULL)
     {
-        raiz = auxA;
-        auxA = NULL;
-        free(auxA);
+        raiz = aux3;
+        aux3 = NULL;
+        free(aux3);
     }
     else
     {
-        auxA2 = raiz;
+        aux32 = raiz;
         posicionar();
     }
     return 0;
@@ -167,7 +167,7 @@ int registrar()
         cab->contador = 0;
         cab->promedio = 0;
         cab->sematemp = 0;
-        cab->time = 0;
+        cab->temp = 0;
 
 
         cab->sig = NULL;
@@ -195,7 +195,7 @@ int registrar()
         aux->contador = 0;
         aux->promedio = 0;
         aux->sematemp = 0;
-        aux->time = 0;
+        aux->temp = 0;
 
         cout << "guardado" << endl;
 
@@ -214,7 +214,7 @@ int registrar()
     return 0;
 }
 
-int correr()
+int N_atleta()
 {
 
     aux = cab;
@@ -229,12 +229,12 @@ int correr()
         {
             if (aux->contador == 1)
             {
-                int multime;
+                int multemp;
                 aux->contador++;
                 cout << "Ingrse tiempo de vuelta "<< "  " << aux->contador << ":";
-                cin >> multime;
+                cin >> multemp;
                 
-                if (multime < 0)
+                if (multemp < 0)
                 {
                     cout << "El tiempo ingresado no puede ser negativo. Ingrese un tiempo valido." << endl;
                     aux->contador--;
@@ -242,10 +242,10 @@ int correr()
                     return 0;
                 }
 
-                aux->sematemp = (aux->sematemp + multime);
+                aux->sematemp = (aux->sematemp + multemp);
                 int resultado = (aux->sematemp) / 2;
                 aux->promedio = resultado;
-                aux->time = (multime);
+                aux->temp = (multemp);
                 registrarArbol(aux);
                 encontrado = true;
                 aux = aux2 = NULL;
@@ -256,12 +256,12 @@ int correr()
             }
             if (aux->contador > 1)
             {
-                int multime;
+                int multemp;
                 aux->contador++;
 
                 cout << "Ingrese tiempo de vuelta" << "  " << aux->contador << ":";
-                cin >> multime;
-                if (multime < 0)
+                cin >> multemp;
+                if (multemp < 0)
                 {
                     cout << "El tiempo ingresado no puede ser negativo. Ingrese un tiempo valido." << endl;
                     aux->contador--;
@@ -269,10 +269,10 @@ int correr()
                     return 0;
                 }
 
-                aux->sematemp = (aux->sematemp + multime);
+                aux->sematemp = (aux->sematemp + multemp);
                 int resultado = (aux->sematemp) / 2;
                 aux->promedio = resultado;
-                aux->time = (multime);
+                aux->temp = (multemp);
                 registrarArbol(aux);
                 balancearArbol(raiz);
                 encontrado = true;
@@ -291,10 +291,10 @@ int correr()
                 aux->contador = x + y;
 
                 cout << "Ingrese tiempo de  vielta"<< "  " << aux->contador << ":";
-                cin >> aux->time;
-                int multime = aux->time;
+                cin >> aux->temp;
+                int multemp = aux->temp;
                 // Validar tiempo positivo
-                if (multime < 0)
+                if (multemp < 0)
                 {
                     cout << "El tiempo ingresado no puede ser negativo. Ingrese un tiempo valido." << endl;
                     aux->contador--;
@@ -332,7 +332,7 @@ int inorden(corredor *recursive)
     {
         inorden(recursive->izquierdo);
     }
-    cout << "corredor  camisa N." << recursive->asignado << " Nombre: " << recursive->nombre << " Ultimo Tiempo: " << recursive->time << " Numero de vueltas: " << recursive->contador << "  Promedio: " << recursive->promedio << endl;
+    cout << "corredor  camisa N." << recursive->asignado << " Nombre: " << recursive->nombre << " Ultimo Tiempo: " << recursive->temp << " Numero de vueltas: " << recursive->contador << "  Promedio: " << recursive->promedio << endl;
 
     if (recursive->derecho != NULL)
     {
@@ -360,7 +360,7 @@ void ordenar_FIFO_desc(struct corredor *inicio)
         }
         int temp = actual->promedio;
         int tamp = actual->asignado;
-        int tomp = actual->time;
+        int tomp = actual->temp;
         int timp = actual->contador;
         int tump = actual->sematemp;
 
@@ -373,8 +373,8 @@ void ordenar_FIFO_desc(struct corredor *inicio)
         actual->asignado = mayor->asignado;
         mayor->asignado = tamp;
 
-        actual->time = mayor->time;
-        mayor->time = tomp;
+        actual->temp = mayor->temp;
+        mayor->temp = tomp;
 
         actual->contador = mayor->contador;
         mayor->contador = timp;
@@ -393,8 +393,8 @@ void uso(){
     aux = NULL;
     aux2 = NULL;
     raiz = NULL;
-    auxA = NULL;
-    auxA2 = NULL;
+    aux3 = NULL;
+    aux32 = NULL;
 
 }
 
@@ -406,10 +406,10 @@ int main()
     {
         cout << endl;
         cout << endl;
-        cout << "*PLANILLA DE ATLETAS ***" << endl;
+        cout << "***PLANILLA DE ATLETAS ***" << endl;
         cout << endl;
         cout << "1-REGISTRAR CORREDOR" << endl;
-        cout << "2-REGUISTRO DE CARRERAS " << endl;
+        cout << "2-REGISTRO DE CARRERAS " << endl;
         cout << "3-VER DATOS EN EL ARBOL" << endl;
         cout << "4-SALIR" << endl;
         cin >> opc;
@@ -418,15 +418,21 @@ int main()
         {
         case 1:
         system("cls");
+        cout << "***REGISTRO ATLETAS ***" << endl;
+        cout << endl;
             registrar(); break;
 
         case 2:
         system("cls");
-          correr();  break;
+                cout << "***REGISTRO DE CARERA DE ATLETA***" << endl;
+        cout << endl;
+          N_atleta();  break;
     
 
         case 3:
         system("cls");
+                cout << "***DATOS GUARDADOS ***" << endl;
+        cout << endl;
             inorden(raiz);  break;
 
         case 4:
